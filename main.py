@@ -2,12 +2,35 @@
 
 # Press Skift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import sys
 
 import pygame
 
-SCREENRECT = pygame.Rect(0, 0, 335 * 3, 186 * 3)
+BLACK = pygame.Color(0, 0, 0)
 WHITE = pygame.Color(255, 255, 255)
-RED = pygame.Color(255, 0, 0)
+CLOCK = pygame.time.Clock()
+SCREEN = pygame.display.set_mode((500, 400), 0, 32)
+
+
+class Dot:
+
+    def __init__(self, x, y):
+        self.velocity = pygame.math.Vector2(1, 1)
+        self.rect = pygame.Rect(x, y, 10, 10)
+        pygame.draw.rect(SCREEN, WHITE, self.rect)
+
+    def update(self):
+        old_rect = pygame.Rect(self.rect)
+        self.rect.topleft = pygame.math.Vector2(self.rect.topleft) + self.velocity
+        print(f'Updating... topleft = {self.rect.topleft}')
+        pygame.draw.rect(SCREEN, BLACK, old_rect)
+        pygame.draw.rect(SCREEN, WHITE, self.rect)
+        bounding_rect = SCREEN.get_bounding_rect()
+        if not bounding_rect.contains(self.rect):
+            if self.rect.centerx < bounding_rect.left or self.rect.centerx > bounding_rect.right:
+                self.velocity = pygame.math.Vector2(-1 * self.velocity.x, self.velocity.y)
+            elif self.rect.centery < bounding_rect.top or self.rect.centery > bounding_rect.bottom:
+                self.velocity = pygame.math.Vector2(self.velocity.x, -1 * self.velocity.y)
 
 
 def print_hi(name):
@@ -20,19 +43,18 @@ def main():
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
-    winstyle = 0
-    bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
-    screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
+    dot = Dot(0, 200)
 
-    surface = pygame.surface(SCREENRECT.size)
-    screen.blit(surface,)
-    running = True
-    while running:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+                pygame.quit()
+                sys.exit()
+
+        dot.update()
+
+        pygame.display.update()
+        CLOCK.tick(120)
 
 
 # Press the green button in the gutter to run the script.
