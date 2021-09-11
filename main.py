@@ -25,6 +25,12 @@ class Dot:
         print(f'Updating... topleft = {self.rect.topleft}')
         pygame.draw.rect(SCREEN, BLACK, old_rect)
         pygame.draw.rect(SCREEN, WHITE, self.rect)
+        bounding_rect = SCREEN.get_bounding_rect()
+        if not bounding_rect.contains(self.rect):
+            if self.rect.centerx < bounding_rect.left or self.rect.centerx > bounding_rect.right:
+                self.velocity = pygame.math.Vector2(-1 * self.velocity.x, self.velocity.y)
+            elif self.rect.centery < bounding_rect.top or self.rect.centery > bounding_rect.bottom:
+                self.velocity = pygame.math.Vector2(self.velocity.x, -1 * self.velocity.y)
 
 
 def print_hi(name):
@@ -48,7 +54,7 @@ def main():
         dot.update()
 
         pygame.display.update()
-        CLOCK.tick(60)
+        CLOCK.tick(120)
 
 
 # Press the green button in the gutter to run the script.
