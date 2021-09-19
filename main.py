@@ -5,17 +5,20 @@
 import sys
 
 import pygame
+import random
 
 BLACK = pygame.Color(0, 0, 0)
 WHITE = pygame.Color(255, 255, 255)
 CLOCK = pygame.time.Clock()
 SCREEN = pygame.display.set_mode((500, 400), 0, 32)
 
+dots = []
+
 
 class Dot:
 
     def __init__(self, x, y):
-        self.velocity = pygame.math.Vector2(1, 1)
+        self.velocity = pygame.math.Vector2(random.randint(-9, 9), random.randint(-9, 9))
         self.rect = pygame.Rect(x, y, 10, 10)
         pygame.draw.rect(SCREEN, WHITE, self.rect)
 
@@ -43,15 +46,16 @@ def main():
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
-    dot = Dot(0, 200)
+    for i in range(1, 50):
+        dots.append(Dot(random.randint(0, SCREEN.get_width()), random.randint(0, SCREEN.get_height())))
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
-        dot.update()
+        for dot in dots:
+            dot.update()
 
         pygame.display.update()
         CLOCK.tick(120)
