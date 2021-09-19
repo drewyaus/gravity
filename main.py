@@ -62,6 +62,7 @@ def print_hi(name):
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
+# see https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector for details
 def reflect(ball_velocity, block_normal):
     return ball_velocity - 2 * (ball_velocity.dot(block_normal)) * block_normal
 
