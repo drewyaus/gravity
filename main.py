@@ -14,25 +14,31 @@ WHITE = pygame.Color(255, 255, 255)
 CLOCK = pygame.time.Clock()
 
 SCREEN = pygame.display.set_mode((900, 600), 0, 32)
+MARGIN_SIZE = 100
 
 BALL_SIZE = 20
 BALL_RADIUS = pygame.math.Vector2(math.sqrt(BALL_SIZE), math.sqrt(BALL_SIZE))
 BALL_DIAMETER = (2 * BALL_RADIUS.magnitude(), 2 * BALL_RADIUS.magnitude())
-
-X_BLOCK_SIZE = (SCREEN.get_width(), SCREEN.get_width())
-Y_BLOCK_SIZE = (SCREEN.get_height(), SCREEN.get_height())
 
 TOP_BLOCK_NORMAL = pygame.math.Vector2(0, -1)
 BOTTOM_BLOCK_NORMAL = pygame.math.Vector2(0, 1)
 LEFT_BLOCK_NORMAL = pygame.math.Vector2(1, 0)
 RIGHT_BLOCK_NORMAL = pygame.math.Vector2(-1, 0)
 
-TOP_BLOCK = pygame.Rect(X_BLOCK_SIZE[0] * TOP_BLOCK_NORMAL, X_BLOCK_SIZE)
-BOTTOM_BLOCK = pygame.Rect(Y_BLOCK_SIZE[0] * BOTTOM_BLOCK_NORMAL, X_BLOCK_SIZE)
-LEFT_BLOCK = pygame.Rect(-1 * Y_BLOCK_SIZE[0] * LEFT_BLOCK_NORMAL, Y_BLOCK_SIZE)
-RIGHT_BLOCK = pygame.Rect(-1 * X_BLOCK_SIZE[0] * RIGHT_BLOCK_NORMAL, Y_BLOCK_SIZE)
+TOP_BLOCK_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - BALL_SIZE), (SCREEN.get_width() - 2 * MARGIN_SIZE, BALL_SIZE))
+BOTTOM_BLOCK_RECT = pygame.Rect((MARGIN_SIZE, SCREEN.get_height() - MARGIN_SIZE), (SCREEN.get_width() - 2 * MARGIN_SIZE, BALL_SIZE))
+LEFT_BLOCK_RECT = pygame.Rect((MARGIN_SIZE - BALL_SIZE, MARGIN_SIZE), (BALL_SIZE, SCREEN.get_height() - 2 * MARGIN_SIZE))
+RIGHT_BLOCK_RECT = pygame.Rect((SCREEN.get_width() - MARGIN_SIZE, MARGIN_SIZE), (BALL_SIZE, SCREEN.get_height() - 2 * MARGIN_SIZE))
 
 balls = []
+blocks = []
+
+
+class Block:
+    def __init__(self, rect, normal):
+        self.rect = rect
+        self.normal = normal
+        pygame.draw.rect(SCREEN, WHITE, self.rect)
 
 
 class Ball:
@@ -65,8 +71,17 @@ def main():
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
+    # top block
+    blocks.append(Block(TOP_BLOCK_RECT, TOP_BLOCK_NORMAL))
+    # bottom block
+    blocks.append(Block(BOTTOM_BLOCK_RECT, BOTTOM_BLOCK_NORMAL))
+    # left block
+    blocks.append(Block(LEFT_BLOCK_RECT, LEFT_BLOCK_NORMAL))
+    # right block
+    blocks.append(Block(RIGHT_BLOCK_RECT, RIGHT_BLOCK_NORMAL))
+
     for i in range(1, 3):
-        balls.append(Ball(random.randint(0, SCREEN.get_width()), random.randint(0, SCREEN.get_height())))
+        balls.append(Ball(random.randint(TOP_BLOCK_RECT.left, TOP_BLOCK_RECT.right), random.randint(LEFT_BLOCK_RECT.top, LEFT_BLOCK_RECT.bottom)))
 
     while True:
         for event in pygame.event.get():
@@ -75,14 +90,9 @@ def main():
                 sys.exit()
         for ball in balls:
             ball.update()
-            if TOP_BLOCK.colliderect(ball.rect):
-                ball.velocity = reflect(ball.velocity, TOP_BLOCK_NORMAL)
-            elif BOTTOM_BLOCK.colliderect(ball.rect):
-                ball.velocity = reflect(ball.velocity, BOTTOM_BLOCK_NORMAL)
-            elif LEFT_BLOCK.colliderect(ball.rect):
-                ball.velocity = reflect(ball.velocity, LEFT_BLOCK_NORMAL)
-            elif RIGHT_BLOCK.colliderect(ball.rect):
-                ball.velocity = reflect(ball.velocity, RIGHT_BLOCK_NORMAL)
+            for block in blocks:
+                if block.rect.colliderect(ball.rect):
+                    ball.velocity = reflect(ball.velocity, block.normal)
 
         pygame.display.update()
 
