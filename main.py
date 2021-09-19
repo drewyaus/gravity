@@ -10,7 +10,8 @@ import random
 BLACK = pygame.Color(0, 0, 0)
 WHITE = pygame.Color(255, 255, 255)
 CLOCK = pygame.time.Clock()
-SCREEN = pygame.display.set_mode((500, 400), 0, 32)
+SCREEN = pygame.display.set_mode((900, 600), 0, 32)
+RADIUS = 5
 
 dots = []
 
@@ -19,20 +20,20 @@ class Dot:
 
     def __init__(self, x, y):
         self.velocity = pygame.math.Vector2(random.randint(-9, 9), random.randint(-9, 9))
-        self.rect = pygame.Rect(x, y, 10, 10)
-        pygame.draw.rect(SCREEN, WHITE, self.rect)
+        self.pos = pygame.math.Vector2(x, y)
+        pygame.draw.circle(SCREEN, WHITE, self.pos, RADIUS)
 
     def update(self):
-        old_rect = pygame.Rect(self.rect)
-        self.rect.topleft = pygame.math.Vector2(self.rect.topleft) + self.velocity
-        print(f'Updating... topleft = {self.rect.topleft}')
-        pygame.draw.rect(SCREEN, BLACK, old_rect)
-        pygame.draw.rect(SCREEN, WHITE, self.rect)
+        old_pos = pygame.math.Vector2(self.pos)
+        self.pos += self.velocity
+        pygame.draw.circle(SCREEN, BLACK, old_pos, RADIUS)
+        pygame.draw.circle(SCREEN, WHITE, self.pos, RADIUS)
+        new_rect = pygame.Rect((self.pos.x - RADIUS, self.pos.y - RADIUS), (2 * RADIUS, 2 * RADIUS))
         bounding_rect = SCREEN.get_bounding_rect()
-        if not bounding_rect.contains(self.rect):
-            if self.rect.centerx < bounding_rect.left or self.rect.centerx > bounding_rect.right:
+        if not bounding_rect.contains(new_rect):
+            if new_rect.left < bounding_rect.left or new_rect.right > bounding_rect.right:
                 self.velocity = pygame.math.Vector2(-1 * self.velocity.x, self.velocity.y)
-            elif self.rect.centery < bounding_rect.top or self.rect.centery > bounding_rect.bottom:
+            elif new_rect.top < bounding_rect.top or new_rect.bottom > bounding_rect.bottom:
                 self.velocity = pygame.math.Vector2(self.velocity.x, -1 * self.velocity.y)
 
 
@@ -46,7 +47,7 @@ def main():
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
-    for i in range(1, 50):
+    for i in range(1, 100):
         dots.append(Dot(random.randint(0, SCREEN.get_width()), random.randint(0, SCREEN.get_height())))
 
     while True:
@@ -56,9 +57,9 @@ def main():
                 sys.exit()
         for dot in dots:
             dot.update()
-
         pygame.display.update()
-        CLOCK.tick(120)
+
+        CLOCK.tick(10)
 
 
 # Press the green button in the gutter to run the script.
