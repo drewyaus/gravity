@@ -55,6 +55,7 @@ class Ball:
         self.pos = pygame.math.Vector2(x, y)
         self.rect = pygame.Rect(self.pos - BALL_RADIUS, BALL_DIAMETER)
         pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_RADIUS.magnitude())
+        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), (self.pos - BALL_RADIUS, BALL_DIAMETER))
 
     def update(self):
         old_pos = pygame.math.Vector2(self.pos)
@@ -63,6 +64,7 @@ class Ball:
         pygame.draw.circle(SCREEN, BLACK, old_pos, BALL_RADIUS.magnitude())
         pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_RADIUS.magnitude())
         self.rect = pygame.Rect(self.pos - BALL_RADIUS, BALL_DIAMETER)
+        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), (self.pos - BALL_RADIUS, BALL_DIAMETER))
 
 
 def print_hi(name):
@@ -84,7 +86,7 @@ def main():
     # right wall
     walls.append(Wall(RIGHT_WALL_RECT, RIGHT_WALL_NORMAL, pygame.Color(255, 0, 255)))
 
-    for i in range(1, 50):
+    for i in range(1, 3):
         rand_x = random.randint(LEFT_WALL_RECT.left, RIGHT_WALL_RECT.right)
         rand_y = random.randint(TOP_WALL_RECT.bottom, BOTTOM_WALL_RECT.top)
         velocity = pygame.math.Vector2(random.randint(0, 9), 0).rotate(random.randint(-10, 10))
@@ -97,13 +99,16 @@ def main():
                 sys.exit()
         for ball in balls:
             for wall in walls:
-                if ball.rect.colliderect(wall.rect):
+                projected_rect = ball.rect.move(ball.velocity)
+                if pygame.Rect.colliderect(projected_rect, wall.rect) or wall.rect.contains(projected_rect):
                     ball.velocity = ball.velocity.reflect(wall.normal)
-            ball.update()
+                    ball.rect = ball.rect.move(50 * wall.normal)
+                else:
+                    ball.update()
 
         pygame.display.update()
 
-        CLOCK.tick(60)
+        CLOCK.tick(1)
 
 
 # Press the green button in the gutter to run the script.
