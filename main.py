@@ -16,42 +16,50 @@ CLOCK = pygame.time.Clock()
 SCREEN = pygame.display.set_mode((900, 600), 0, 32)
 MARGIN_SIZE = 100
 
-BALL_SIZE = 20
+BALL_SIZE = 10
 BALL_RADIUS = pygame.math.Vector2(math.sqrt(BALL_SIZE), math.sqrt(BALL_SIZE))
 BALL_DIAMETER = (2 * BALL_RADIUS.magnitude(), 2 * BALL_RADIUS.magnitude())
 
-TOP_BLOCK_NORMAL = pygame.math.Vector2(0, -1)
-BOTTOM_BLOCK_NORMAL = pygame.math.Vector2(0, 1)
-LEFT_BLOCK_NORMAL = pygame.math.Vector2(1, 0)
-RIGHT_BLOCK_NORMAL = pygame.math.Vector2(-1, 0)
+GRAVITY = pygame.math.Vector2(0, 1)
 
-TOP_BLOCK_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - BALL_SIZE), (SCREEN.get_width() - 2 * MARGIN_SIZE, BALL_SIZE))
-BOTTOM_BLOCK_RECT = pygame.Rect((MARGIN_SIZE, SCREEN.get_height() - MARGIN_SIZE), (SCREEN.get_width() - 2 * MARGIN_SIZE, BALL_SIZE))
-LEFT_BLOCK_RECT = pygame.Rect((MARGIN_SIZE - BALL_SIZE, MARGIN_SIZE), (BALL_SIZE, SCREEN.get_height() - 2 * MARGIN_SIZE))
-RIGHT_BLOCK_RECT = pygame.Rect((SCREEN.get_width() - MARGIN_SIZE, MARGIN_SIZE), (BALL_SIZE, SCREEN.get_height() - 2 * MARGIN_SIZE))
+TOP_WALL_NORMAL = pygame.math.Vector2(0, -1)
+BOTTOM_WALL_NORMAL = pygame.math.Vector2(0, 1)
+LEFT_WALL_NORMAL = pygame.math.Vector2(1, 0)
+RIGHT_WALL_NORMAL = pygame.math.Vector2(-1, 0)
+
+WALL_THICKNESS = 20
+TOP_WALL_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - WALL_THICKNESS),
+                            (SCREEN.get_width() - 2 * MARGIN_SIZE, WALL_THICKNESS))
+BOTTOM_WALL_RECT = pygame.Rect((MARGIN_SIZE, SCREEN.get_height() - MARGIN_SIZE),
+                               (SCREEN.get_width() - 2 * MARGIN_SIZE, WALL_THICKNESS))
+LEFT_WALL_RECT = pygame.Rect((MARGIN_SIZE - WALL_THICKNESS, MARGIN_SIZE),
+                             (WALL_THICKNESS, SCREEN.get_height() - 2 * MARGIN_SIZE))
+RIGHT_WALL_RECT = pygame.Rect((SCREEN.get_width() - MARGIN_SIZE, MARGIN_SIZE),
+                              (WALL_THICKNESS, SCREEN.get_height() - 2 * MARGIN_SIZE))
 
 balls = []
-blocks = []
+walls = []
 
 
-class Block:
-    def __init__(self, rect, normal):
+class Wall:
+    def __init__(self, rect, normal, color):
         self.rect = rect
         self.normal = normal
-        pygame.draw.rect(SCREEN, WHITE, self.rect)
+        pygame.draw.rect(SCREEN, color, self.rect)
 
 
 class Ball:
 
-    def __init__(self, x, y):
-        self.velocity = pygame.math.Vector2(random.randint(-9, 9), random.randint(-9, 9))
+    def __init__(self, x, y, velocity):
+        self.velocity = velocity
         self.pos = pygame.math.Vector2(x, y)
         self.rect = pygame.Rect(self.pos - BALL_RADIUS, BALL_DIAMETER)
         pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_RADIUS.magnitude())
 
     def update(self):
         old_pos = pygame.math.Vector2(self.pos)
-        self.pos += self.velocity
+        self.velocity += GRAVITY
+        self.pos = self.pos + self.velocity
         pygame.draw.circle(SCREEN, BLACK, old_pos, BALL_RADIUS.magnitude())
         pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_RADIUS.magnitude())
         self.rect = pygame.Rect(self.pos - BALL_RADIUS, BALL_DIAMETER)
@@ -62,27 +70,25 @@ def print_hi(name):
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
-# see https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector for details
-def reflect(ball_velocity, block_normal):
-    return ball_velocity - 2 * (ball_velocity.dot(block_normal)) * block_normal
-
-
 def main():
     if pygame.get_sdl_version()[0] == 2:
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
-    # top block
-    blocks.append(Block(TOP_BLOCK_RECT, TOP_BLOCK_NORMAL))
-    # bottom block
-    blocks.append(Block(BOTTOM_BLOCK_RECT, BOTTOM_BLOCK_NORMAL))
-    # left block
-    blocks.append(Block(LEFT_BLOCK_RECT, LEFT_BLOCK_NORMAL))
-    # right block
-    blocks.append(Block(RIGHT_BLOCK_RECT, RIGHT_BLOCK_NORMAL))
+    # top wall
+    walls.append(Wall(TOP_WALL_RECT, TOP_WALL_NORMAL, pygame.Color(255, 0, 0)))
+    # bottom wall
+    walls.append(Wall(BOTTOM_WALL_RECT, BOTTOM_WALL_NORMAL, pygame.Color(0, 255, 0)))
+    # left wall
+    walls.append(Wall(LEFT_WALL_RECT, LEFT_WALL_NORMAL, pygame.Color(0, 0, 255)))
+    # right wall
+    walls.append(Wall(RIGHT_WALL_RECT, RIGHT_WALL_NORMAL, pygame.Color(255, 0, 255)))
 
-    for i in range(1, 3):
-        balls.append(Ball(random.randint(TOP_BLOCK_RECT.left, TOP_BLOCK_RECT.right), random.randint(LEFT_BLOCK_RECT.top, LEFT_BLOCK_RECT.bottom)))
+    for i in range(1, 50):
+        rand_x = random.randint(LEFT_WALL_RECT.left, RIGHT_WALL_RECT.right)
+        rand_y = random.randint(TOP_WALL_RECT.bottom, BOTTOM_WALL_RECT.top)
+        velocity = pygame.math.Vector2(random.randint(0, 9), 0).rotate(random.randint(-10, 10))
+        balls.append(Ball(rand_x, rand_y, velocity))
 
     while True:
         for event in pygame.event.get():
@@ -90,14 +96,14 @@ def main():
                 pygame.quit()
                 sys.exit()
         for ball in balls:
+            for wall in walls:
+                if ball.rect.colliderect(wall.rect):
+                    ball.velocity = ball.velocity.reflect(wall.normal)
             ball.update()
-            for block in blocks:
-                if block.rect.colliderect(ball.rect):
-                    ball.velocity = reflect(ball.velocity, block.normal)
 
         pygame.display.update()
 
-        CLOCK.tick(100)
+        CLOCK.tick(60)
 
 
 # Press the green button in the gutter to run the script.
