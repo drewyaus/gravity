@@ -18,7 +18,7 @@ MARGIN_SIZE = 100
 
 BALL_SIZE = 10
 
-GRAVITY = pygame.math.Vector2(0, 0.25)
+GRAVITY = 0.5
 
 TOP_WALL_NORMAL = pygame.math.Vector2(0, 1)
 BOTTOM_WALL_NORMAL = pygame.math.Vector2(0, -1)
@@ -55,6 +55,8 @@ class Ball:
     def __init__(self, x, y, velocity):
         self.velocity = velocity
         self.pos = pygame.math.Vector2(x, y)
+        energy = GRAVITY * (BOTTOM_WALL_RECT.top - self.pos.y)
+        self.y_max = BOTTOM_WALL_RECT.top - energy / GRAVITY
         self.rect = pygame.Rect(self.pos, (0, 0)).inflate((BALL_SIZE, BALL_SIZE))
         pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), self.rect)
         pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_SIZE / 2)
@@ -62,7 +64,8 @@ class Ball:
     def update(self):
         old_pos = pygame.math.Vector2(self.pos)
         self.pos = self.pos + self.velocity
-        self.velocity += GRAVITY
+        y_velocity = math.sqrt(2 * GRAVITY * (self.pos.y - self.y_max)) + 0.001
+        self.velocity = pygame.math.Vector2(self.velocity.x, math.copysign(y_velocity, self.velocity.y))
         self.rect = pygame.Rect(self.pos, (0, 0)).inflate((BALL_SIZE, BALL_SIZE))
         pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), self.rect)
         pygame.draw.circle(SCREEN, BLACK, old_pos, BALL_SIZE / 2)
@@ -91,7 +94,7 @@ def main():
     for i in range(0, 3):
         rand_x = random.randint(LEFT_WALL_RECT.right, RIGHT_WALL_RECT.left)
         rand_y = random.randint(TOP_WALL_RECT.bottom, BOTTOM_WALL_RECT.top)
-        velocity = pygame.math.Vector2(random.randint(0, 9), 0).rotate(random.randint(-10, 10))
+        velocity = pygame.math.Vector2(random.randint(0, 9), 0)
         balls.append(Ball(rand_x, rand_y, velocity))
 
     while True:
@@ -106,13 +109,13 @@ def main():
                     ball.velocity = ball.velocity.reflect(wall.normal)
                     ball.update()
                     if wall.rect.colliderect(ball.rect):
-                            ball.pos = ball.pos + BALL_SIZE * wall.normal
+                        ball.pos = ball.pos + BALL_SIZE * wall.normal
         for wall in walls:
             wall.redraw()
 
         pygame.display.update()
 
-        CLOCK.tick(30)
+        CLOCK.tick(5)
 
 
 # Press the green button in the gutter to run the script.
