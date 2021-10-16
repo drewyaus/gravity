@@ -17,17 +17,15 @@ SCREEN = pygame.display.set_mode((900, 600), 0, 32)
 MARGIN_SIZE = 100
 
 BALL_SIZE = 10
-BALL_RADIUS = pygame.math.Vector2(math.sqrt(BALL_SIZE), math.sqrt(BALL_SIZE))
-BALL_DIAMETER = (2 * BALL_RADIUS.magnitude(), 2 * BALL_RADIUS.magnitude())
 
-GRAVITY = pygame.math.Vector2(0, 1)
+GRAVITY = pygame.math.Vector2(0, 0.25)
 
-TOP_WALL_NORMAL = pygame.math.Vector2(0, -1)
-BOTTOM_WALL_NORMAL = pygame.math.Vector2(0, 1)
+TOP_WALL_NORMAL = pygame.math.Vector2(0, 1)
+BOTTOM_WALL_NORMAL = pygame.math.Vector2(0, -1)
 LEFT_WALL_NORMAL = pygame.math.Vector2(1, 0)
 RIGHT_WALL_NORMAL = pygame.math.Vector2(-1, 0)
 
-WALL_THICKNESS = 20
+WALL_THICKNESS = 50
 TOP_WALL_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - WALL_THICKNESS),
                             (SCREEN.get_width() - 2 * MARGIN_SIZE, WALL_THICKNESS))
 BOTTOM_WALL_RECT = pygame.Rect((MARGIN_SIZE, SCREEN.get_height() - MARGIN_SIZE),
@@ -53,18 +51,18 @@ class Ball:
     def __init__(self, x, y, velocity):
         self.velocity = velocity
         self.pos = pygame.math.Vector2(x, y)
-        self.rect = pygame.Rect(self.pos - BALL_RADIUS, BALL_DIAMETER)
-        pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_RADIUS.magnitude())
-        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), (self.pos - BALL_RADIUS, BALL_DIAMETER))
+        self.rect = pygame.Rect(self.pos, (0, 0)).inflate((BALL_SIZE, BALL_SIZE))
+        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), self.rect)
+        pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_SIZE / 2)
 
     def update(self):
         old_pos = pygame.math.Vector2(self.pos)
-        self.velocity += GRAVITY
         self.pos = self.pos + self.velocity
-        pygame.draw.circle(SCREEN, BLACK, old_pos, BALL_RADIUS.magnitude())
-        pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_RADIUS.magnitude())
-        self.rect = pygame.Rect(self.pos - BALL_RADIUS, BALL_DIAMETER)
-        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), (self.pos - BALL_RADIUS, BALL_DIAMETER))
+        self.velocity += GRAVITY
+        self.rect = pygame.Rect(self.pos, (0, 0)).inflate((BALL_SIZE, BALL_SIZE))
+        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), self.rect)
+        pygame.draw.circle(SCREEN, BLACK, old_pos, BALL_SIZE / 2)
+        pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_SIZE / 2)
 
 
 def print_hi(name):
@@ -86,8 +84,8 @@ def main():
     # right wall
     walls.append(Wall(RIGHT_WALL_RECT, RIGHT_WALL_NORMAL, pygame.Color(255, 0, 255)))
 
-    for i in range(1, 3):
-        rand_x = random.randint(LEFT_WALL_RECT.left, RIGHT_WALL_RECT.right)
+    for i in range(1, 1000):
+        rand_x = random.randint(LEFT_WALL_RECT.right, RIGHT_WALL_RECT.left)
         rand_y = random.randint(TOP_WALL_RECT.bottom, BOTTOM_WALL_RECT.top)
         velocity = pygame.math.Vector2(random.randint(0, 9), 0).rotate(random.randint(-10, 10))
         balls.append(Ball(rand_x, rand_y, velocity))
@@ -99,16 +97,13 @@ def main():
                 sys.exit()
         for ball in balls:
             for wall in walls:
-                projected_rect = ball.rect.move(ball.velocity)
-                if pygame.Rect.colliderect(projected_rect, wall.rect) or wall.rect.contains(projected_rect):
+                if wall.rect.colliderect(ball.rect):
                     ball.velocity = ball.velocity.reflect(wall.normal)
-                    ball.rect = ball.rect.move(50 * wall.normal)
-                else:
-                    ball.update()
+            ball.update()
 
         pygame.display.update()
 
-        CLOCK.tick(1)
+        CLOCK.tick(100)
 
 
 # Press the green button in the gutter to run the script.
