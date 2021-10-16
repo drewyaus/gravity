@@ -43,7 +43,11 @@ class Wall:
     def __init__(self, rect, normal, color):
         self.rect = rect
         self.normal = normal
-        pygame.draw.rect(SCREEN, color, self.rect)
+        self.color = color
+        pygame.draw.rect(SCREEN, self.color, self.rect)
+
+    def redraw(self):
+        pygame.draw.rect(SCREEN, self.color, self.rect)
 
 
 class Ball:
@@ -84,7 +88,7 @@ def main():
     # right wall
     walls.append(Wall(RIGHT_WALL_RECT, RIGHT_WALL_NORMAL, pygame.Color(255, 0, 255)))
 
-    for i in range(1, 1000):
+    for i in range(0, 3):
         rand_x = random.randint(LEFT_WALL_RECT.right, RIGHT_WALL_RECT.left)
         rand_y = random.randint(TOP_WALL_RECT.bottom, BOTTOM_WALL_RECT.top)
         velocity = pygame.math.Vector2(random.randint(0, 9), 0).rotate(random.randint(-10, 10))
@@ -96,14 +100,19 @@ def main():
                 pygame.quit()
                 sys.exit()
         for ball in balls:
+            ball.update()
             for wall in walls:
                 if wall.rect.colliderect(ball.rect):
                     ball.velocity = ball.velocity.reflect(wall.normal)
-            ball.update()
+                    ball.update()
+                    if wall.rect.colliderect(ball.rect):
+                            ball.pos = ball.pos + BALL_SIZE * wall.normal
+        for wall in walls:
+            wall.redraw()
 
         pygame.display.update()
 
-        CLOCK.tick(100)
+        CLOCK.tick(30)
 
 
 # Press the green button in the gutter to run the script.
