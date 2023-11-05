@@ -1,12 +1,11 @@
 # This is a sample Python script.
 
+import random
 # Press Skift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import sys
 
 import pygame
-import random
-import math
 
 BLACK = pygame.Color(0, 0, 0)
 WHITE = pygame.Color(255, 255, 255)
@@ -25,7 +24,7 @@ BOTTOM_WALL_NORMAL = pygame.math.Vector2(0, -1)
 LEFT_WALL_NORMAL = pygame.math.Vector2(1, 0)
 RIGHT_WALL_NORMAL = pygame.math.Vector2(-1, 0)
 
-WALL_THICKNESS = 50
+WALL_THICKNESS = 5
 TOP_WALL_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - WALL_THICKNESS),
                             (SCREEN.get_width() - 1.5 * MARGIN_SIZE, WALL_THICKNESS))
 BOTTOM_WALL_RECT = pygame.Rect((MARGIN_SIZE, SCREEN.get_height() - MARGIN_SIZE),
@@ -34,6 +33,9 @@ LEFT_WALL_RECT = pygame.Rect((MARGIN_SIZE - WALL_THICKNESS, MARGIN_SIZE),
                              (WALL_THICKNESS, SCREEN.get_height() - 1.5 * MARGIN_SIZE))
 RIGHT_WALL_RECT = pygame.Rect((SCREEN.get_width() - MARGIN_SIZE, MARGIN_SIZE),
                               (WALL_THICKNESS, SCREEN.get_height() - 1.5 * MARGIN_SIZE))
+ALL_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - WALL_THICKNESS),
+                       ((SCREEN.get_width() - 1.5 * MARGIN_SIZE) + (2 * WALL_THICKNESS),
+                        (SCREEN.get_height() - 1.5 * MARGIN_SIZE) + (2 * WALL_THICKNESS)))
 
 balls = []
 walls = []
@@ -79,6 +81,8 @@ def main():
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
+    out_font = pygame.font.SysFont(None, 30)
+
     # top wall
     walls.append(Wall(TOP_WALL_RECT, TOP_WALL_NORMAL, pygame.Color(255, 0, 0)))
     # bottom wall
@@ -106,13 +110,19 @@ def main():
                     ball.velocity = ball.velocity.reflect(wall.normal)
                     ball.update()
                     if wall.rect.colliderect(ball.rect):
-                            ball.pos = ball.pos + BALL_SIZE * wall.normal
+                        ball.pos = ball.pos + BALL_SIZE * wall.normal
         for wall in walls:
             wall.redraw()
 
-        pygame.display.update()
+        SCREEN.blit(out_font.render(str(len(balls)), True, BLACK), (MARGIN_SIZE, 0.5 * MARGIN_SIZE))
+        for ball in balls:
+            if not ALL_RECT.colliderect(ball.rect):
+                balls.remove(ball)
+        SCREEN.blit(out_font.render(str(len(balls)), True, WHITE), (MARGIN_SIZE, 0.5 * MARGIN_SIZE))
 
-        CLOCK.tick(100001.5)
+        pygame.display.flip()
+
+        CLOCK.tick(1000)
 
 
 # Press the green button in the gutter to run the script.
