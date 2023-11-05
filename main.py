@@ -6,34 +6,70 @@ import sys
 
 import pygame
 import random
+import math
 
 BLACK = pygame.Color(0, 0, 0)
 WHITE = pygame.Color(255, 255, 255)
+
 CLOCK = pygame.time.Clock()
-SCREEN = pygame.display.set_mode((500, 400), 0, 32)
 
-dots = []
+SCREEN = pygame.display.set_mode((900, 600), 0, 32)
+MARGIN_SIZE = 100
+
+BALL_SIZE = 10
+
+GRAVITY = 0.5
+
+TOP_WALL_NORMAL = pygame.math.Vector2(0, 1)
+BOTTOM_WALL_NORMAL = pygame.math.Vector2(0, -1)
+LEFT_WALL_NORMAL = pygame.math.Vector2(1, 0)
+RIGHT_WALL_NORMAL = pygame.math.Vector2(-1, 0)
+
+WALL_THICKNESS = 50
+TOP_WALL_RECT = pygame.Rect((MARGIN_SIZE, MARGIN_SIZE - WALL_THICKNESS),
+                            (SCREEN.get_width() - 2 * MARGIN_SIZE, WALL_THICKNESS))
+BOTTOM_WALL_RECT = pygame.Rect((MARGIN_SIZE, SCREEN.get_height() - MARGIN_SIZE),
+                               (SCREEN.get_width() - 2 * MARGIN_SIZE, WALL_THICKNESS))
+LEFT_WALL_RECT = pygame.Rect((MARGIN_SIZE - WALL_THICKNESS, MARGIN_SIZE),
+                             (WALL_THICKNESS, SCREEN.get_height() - 2 * MARGIN_SIZE))
+RIGHT_WALL_RECT = pygame.Rect((SCREEN.get_width() - MARGIN_SIZE, MARGIN_SIZE),
+                              (WALL_THICKNESS, SCREEN.get_height() - 2 * MARGIN_SIZE))
+
+balls = []
+walls = []
 
 
-class Dot:
+class Wall:
+    def __init__(self, rect, normal, color):
+        self.rect = rect
+        self.normal = normal
+        self.color = color
+        pygame.draw.rect(SCREEN, self.color, self.rect)
 
-    def __init__(self, x, y):
-        self.velocity = pygame.math.Vector2(random.randint(-9, 9), random.randint(-9, 9))
-        self.rect = pygame.Rect(x, y, 10, 10)
-        pygame.draw.rect(SCREEN, WHITE, self.rect)
+    def redraw(self):
+        pygame.draw.rect(SCREEN, self.color, self.rect)
+
+
+class Ball:
+
+    def __init__(self, x, y, velocity):
+        self.velocity = velocity
+        self.pos = pygame.math.Vector2(x, y)
+        energy = GRAVITY * (BOTTOM_WALL_RECT.top - self.pos.y)
+        self.y_max = BOTTOM_WALL_RECT.top - energy / GRAVITY
+        self.rect = pygame.Rect(self.pos, (0, 0)).inflate((BALL_SIZE, BALL_SIZE))
+        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), self.rect)
+        pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_SIZE / 2)
 
     def update(self):
-        old_rect = pygame.Rect(self.rect)
-        self.rect.topleft = pygame.math.Vector2(self.rect.topleft) + self.velocity
-        print(f'Updating... topleft = {self.rect.topleft}')
-        pygame.draw.rect(SCREEN, BLACK, old_rect)
-        pygame.draw.rect(SCREEN, WHITE, self.rect)
-        bounding_rect = SCREEN.get_bounding_rect()
-        if not bounding_rect.contains(self.rect):
-            if self.rect.centerx < bounding_rect.left or self.rect.centerx > bounding_rect.right:
-                self.velocity = pygame.math.Vector2(-1 * self.velocity.x, self.velocity.y)
-            elif self.rect.centery < bounding_rect.top or self.rect.centery > bounding_rect.bottom:
-                self.velocity = pygame.math.Vector2(self.velocity.x, -1 * self.velocity.y)
+        old_pos = pygame.math.Vector2(self.pos)
+        self.pos = self.pos + self.velocity
+        y_velocity = math.sqrt(2 * GRAVITY * (self.pos.y - self.y_max)) + 0.001
+        self.velocity = pygame.math.Vector2(self.velocity.x, math.copysign(y_velocity, self.velocity.y))
+        self.rect = pygame.Rect(self.pos, (0, 0)).inflate((BALL_SIZE, BALL_SIZE))
+        pygame.draw.rect(SCREEN, pygame.Color(255, 0, 255), self.rect)
+        pygame.draw.circle(SCREEN, BLACK, old_pos, BALL_SIZE / 2)
+        pygame.draw.circle(SCREEN, WHITE, self.pos, BALL_SIZE / 2)
 
 
 def print_hi(name):
@@ -46,19 +82,40 @@ def main():
         pygame.mixer.pre_init(44100, 32, 2, 1024)
     pygame.init()
 
-    for i in range(1, 50):
-        dots.append(Dot(random.randint(0, 500), random.randint(0, 400)))
+    # top wall
+    walls.append(Wall(TOP_WALL_RECT, TOP_WALL_NORMAL, pygame.Color(255, 0, 0)))
+    # bottom wall
+    walls.append(Wall(BOTTOM_WALL_RECT, BOTTOM_WALL_NORMAL, pygame.Color(0, 255, 0)))
+    # left wall
+    walls.append(Wall(LEFT_WALL_RECT, LEFT_WALL_NORMAL, pygame.Color(0, 0, 255)))
+    # right wall
+    walls.append(Wall(RIGHT_WALL_RECT, RIGHT_WALL_NORMAL, pygame.Color(255, 0, 255)))
+
+    for i in range(0, 3):
+        rand_x = random.randint(LEFT_WALL_RECT.right, RIGHT_WALL_RECT.left)
+        rand_y = random.randint(TOP_WALL_RECT.bottom, BOTTOM_WALL_RECT.top)
+        velocity = pygame.math.Vector2(random.randint(0, 9), 0)
+        balls.append(Ball(rand_x, rand_y, velocity))
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        for dot in dots:
-            dot.update()
+        for ball in balls:
+            ball.update()
+            for wall in walls:
+                if wall.rect.colliderect(ball.rect):
+                    ball.velocity = ball.velocity.reflect(wall.normal)
+                    ball.update()
+                    if wall.rect.colliderect(ball.rect):
+                        ball.pos = ball.pos + BALL_SIZE * wall.normal
+        for wall in walls:
+            wall.redraw()
 
         pygame.display.update()
-        CLOCK.tick(99999)
+
+        CLOCK.tick(5)
 
 
 # Press the green button in the gutter to run the script.
